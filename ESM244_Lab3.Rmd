@@ -1,0 +1,116 @@
+---
+title: "ESM244_Lab1"
+author: "Sara Orofino"
+date: "1/24/2019"
+output: html_document
+---
+
+```{r, packages, message=FALSE}
+
+
+library(tidyverse)
+library(boot)
+library(naniar)
+library(simputation)
+
+```
+
+####A. Boostrapping penguin flipper length
+
+```{r}
+
+penguins <- read_csv("penguins.csv")
+
+male_p <- penguins %>% 
+  filter(sex == "MALE")
+
+# look at it 
+
+ggplot(male_p, aes(x=flipper_length)) +
+  geom_histogram(bins=10) +
+  theme_light()
+
+#create a vector of flipper length: 
+
+flippers <- male_p  %>% 
+  pull(flipper_length)  
+```
+
+###Create a function, and do some bootstrapping 
+
+```{r}
+
+# boostrap samples - take 22 observations with replacement (number of observations in the original sample) and calculate the mean; repeat many times 
+
+#first create a function that will allow you to take the mean of the boostrap samples
+
+mean_fun <- function(x,i) {mean(x[i])}
+
+# use set.seed to keep the output exactly the same if you run that line of code again - use this to make boostrapping reproducible, so collaborators can run that code and see the same outcome (boostrapping is using a random number generator so this is important) 
+
+set.seed(10)
+boot_10 <- boot(flippers, mean_fun, R = 10) #does only 10 samples: needs the vector data, function, and number of bootstrap samples 
+
+boot_100<-boot(flippers, mean_fun, R=100) #bias and standard error are decreasing quite a bit-still need more samples
+
+#plot sampling distribution of the boostrapped sample means 
+ggplot() +
+  aes(boot_100$t) +
+  geom_histogram()
+
+
+boot_10000 <- boot(flippers, mean_fun, R=10000)
+
+ggplot() +
+  aes(boot_10000$t) +
+  geom_histogram()
+
+# Calcuate a confidence interval with the boot.ci() function in boot package - percentile CI is the type we are used to thinking of (can use BCa if worried about skewness)
+
+boot.ci(boot_10000, conf = 0.95)
+
+
+```
+
+###Evaluating missingness with naniar 
+
+```{r}
+
+vis_miss(airquality)  #visual representation of missingness 
+
+gg_miss_var(airquality, facet = Month) #counts of missings per variable, facet by Month
+
+#Functions to work with ggplot 
+# geom_miss_point()
+
+ggplot(airquality,
+       aes(x = Ozone, y  = Solar.R)) +
+  geom_miss_point()
+
+# For Ozone vs. Solar.R - Along y-axis shows where solar radiation  was measured but ozone wasn't, and x-axis shows where ozone was measured but solar radiation wasn't. 
+
+ggplot(airquality,
+       aes(x=Solar.R,
+           y = Temp)) +
+  geom_miss_point() +
+  scale_color_manual(values=c("orange", "purple")) +
+  facet_wrap(~Month)
+
+# Shadow matrix - dataframe about whether or not observations are NA - combines a shadow dataframe on your dataframe that has NA if the value was absent and !NA if it was present
+
+na_shadow <- bind_shadow(airquality)
+
+
+# Imputation by linear regression  
+
+
+```
+
+
+
+
+
+
+
+
+
