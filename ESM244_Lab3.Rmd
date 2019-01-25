@@ -103,6 +103,18 @@ na_shadow <- bind_shadow(airquality)
 
 # Imputation by linear regression  
 
+airquality %>% 
+  impute_lm(Ozone ~ Temp  + Wind) %>% 
+  ggplot(aes(x=Temp, y=Ozone)) +
+  geom_point()
+
+# Point out which values are imputed values by combining na_shadow with the linear regression 
+
+na_shadow %>% 
+  impute_lm(Ozone ~ Temp + Wind) %>% 
+  ggplot(aes(x=Temp, y=Ozone, color=Ozone_NA)) +
+  geom_point()
+
 
 ```
 
